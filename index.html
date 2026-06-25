@@ -3,69 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Cuaca - Chart.js</title>
+    <title>Dashboard Cuaca - Weatherstack</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
             background-color: #0b0e14;
             color: #ffffff;
-            margin: 0;
             padding: 40px 20px;
             display: flex;
             justify-content: center;
         }
         .dashboard-box {
             width: 100%;
-            max-width: 800px;
+            max-width: 600px;
             background-color: #141a24;
             padding: 30px;
             border-radius: 16px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-            border: 1px solid #1f293d;
+            text-align: center;
         }
-        h1 { font-size: 24px; color: #00b4d8; margin-bottom: 5px; }
-        p.subtitle { color: #6c7d93; margin-top: 0; margin-bottom: 30px; font-size: 14px; }
-        .chart-wrapper { position: relative; width: 100%; height: 350px; }
+        h1 { color: #00b4d8; margin-bottom: 5px; }
+        p { color: #6c7d93; }
+        .chart-wrapper { position: relative; width: 100%; height: 300px; margin-top: 20px; }
     </style>
 </head>
 <body>
+
     <div class="dashboard-box">
-        <h1>Dashboard Ramalan Cuaca</h1>
-        <p class="subtitle">Data Mingguan Kuala Lumpur • Powered by Chart.js</p>
+        <h1 id="lokasi">Loading...</h1>
+        <p>Data Cuaca Sebenar (Real-time) dari Weatherstack API</p>
+        
         <div class="chart-wrapper">
             <canvas id="grafCuaca"></canvas>
         </div>
     </div>
+
     <script>
-        const senaraiHari = ['Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu', 'Ahad'];
-        const bacaanSuhu = [31, 33, 32, 34, 30, 29, 32];
-        const ctx = document.getElementById('grafCuaca').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: senaraiHari,
-                datasets: [{
-                    label: 'Suhu Maksimum (°C)',
-                    data: bacaanSuhu,
-                    borderColor: '#00b4d8',
-                    backgroundColor: 'rgba(0, 180, 216, 0.15)',
-                    borderWidth: 3,
-                    tension: 0.4,
-                    fill: true,
-                    pointBackgroundColor: '#00b4d8'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#ffffff' } } },
-                scales: {
-                    y: { grid: { color: '#1f293d' }, ticks: { color: '#6c7d93' }, beginAtZero: false },
-                    x: { grid: { color: 'transparent' }, ticks: { color: '#6c7d93' } }
+        // GANTI 'MASUKKAN_API_KEY_KAU_KAT_SINI' DENGAN ACCESS KEY DARI WEATHERSTACK
+        const apiKey = 'b05593714516f3a5be25703b3cb37a18'; 
+        const lokasiCarian = 'Kuala Lumpur';
+        const url = `http://api.weatherstack.com/current?access_key=${apiKey}&query=${lokasiCarian}`;
+
+        async function dapatkanDataCuaca() {
+            try {
+                const respon = await fetch(url);
+                const data = await respon.json();
+
+                if (data.success === false) {
+                    document.getElementById('lokasi').innerText = "API Key Salah/Error!";
+                    console.error(data.error.info);
+                    return;
                 }
+
+                // Ambil data dari API
+                const namaTempat = data.location.name;
+                const suhuSemasa = data.current.temperature;
+                const rasaSuhu = data.current.feelslike;
+                const kelembapan = data.current.humidity;
+
+                // Update tajuk lokasi
+                document.getElementById('lokasi').innerText = `Cuaca di ${namaTempat}`;
+
+                // Lukis Graf pakai data sebenar API
+                binaGraf(suhuSemasa, rasaSuhu, kelembapan);
+
+            } catch (error) {
+                console.error("Gagal tarik data:", error);
             }
-        });
+        }
+
+        function binaGraf(suhu, rasa, lembap) {
+            const ctx = document.getElementById('grafCuaca').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar', // Kita guna Bar Chart (Graf Bar)
+                data: {
+                    labels: ['Suhu Sebenar (°C)', 'Rasa Seperti (°C)', 'Kelembapan (%)'],
+                    datasets: [{
+                        label: 'Status Cuaca Terkini',
+                        data: [suhu, rasa, lembap],
+                        backgroundColor: ['#00b4d8', '#ffb703', '#2a9d8f'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#1f293d' }, ticks: { color: '#6c7d93' } },
+                        x: { ticks: { color: '#6c7d93' } }
+                    }
+                }
+            });
+        }
+
+        // Jalankan fungsi
+        dapatkanDataCuaca();
     </script>
 </body>
 </html>
