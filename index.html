@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="ms">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Cuaca - Weatherstack</title>
+    <title>Weather Dashboard - Chart.js</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
             background-color: #0b0e14;
             color: #ffffff;
             padding: 40px 20px;
@@ -22,66 +22,59 @@
             border-radius: 16px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
             text-align: center;
+            border: 1px solid #1f293d;
         }
         h1 { color: #00b4d8; margin-bottom: 5px; }
-        p { color: #6c7d93; }
+        p { color: #6c7d93; margin-top: 0; }
         .chart-wrapper { position: relative; width: 100%; height: 300px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div class="dashboard-box">
-        <h1 id="lokasi">Loading...</h1>
-        <p>Data Cuaca Sebenar (Real-time) dari Weatherstack API</p>
+        <h1 id="location">Fetching Live Data...</h1>
+        <p>Real-time Weather Dashboard via Open-Meteo API</p>
         
         <div class="chart-wrapper">
-            <canvas id="grafCuaca"></canvas>
+            <canvas id="weatherChart"></canvas>
         </div>
     </div>
 
     <script>
-        // GANTI 'MASUKKAN_API_KEY_KAU_KAT_SINI' DENGAN ACCESS KEY DARI WEATHERSTACK
-        const apiKey = 'b05593714516f3a5be25703b3cb37a18'; 
-        const lokasiCarian = 'Kuala Lumpur';
-        const url = `http://api.weatherstack.com/current?access_key=${apiKey}&query=${lokasiCarian}`;
+        // Open-Meteo API URL (No API key required & uses HTTPS)
+        const url = 'https://api.open-meteo.com/v1/forecast?latitude=3.1412&longitude=101.6865&current=temperature_2m,relative_humidity_2m,apparent_temperature&timezone=Asia%2FSingapore';
 
-        async function dapatkanDataCuaca() {
+        async function fetchWeatherData() {
             try {
-                const respon = await fetch(url);
-                const data = await respon.json();
+                const response = await fetch(url);
+                const data = await response.json();
 
-                if (data.success === false) {
-                    document.getElementById('lokasi').innerText = "API Key Salah/Error!";
-                    console.error(data.error.info);
-                    return;
-                }
+                // Extracting live data points from API
+                const currentTemp = data.current.temperature_2m;
+                const feelsLike = data.current.apparent_temperature;
+                const humidity = data.current.relative_humidity_2m;
 
-                // Ambil data dari API
-                const namaTempat = data.location.name;
-                const suhuSemasa = data.current.temperature;
-                const rasaSuhu = data.current.feelslike;
-                const kelembapan = data.current.humidity;
+                // Update Heading text
+                document.getElementById('location').innerText = `Weather in Kuala Lumpur`;
 
-                // Update tajuk lokasi
-                document.getElementById('lokasi').innerText = `Cuaca di ${namaTempat}`;
-
-                // Lukis Graf pakai data sebenar API
-                binaGraf(suhuSemasa, rasaSuhu, kelembapan);
+                // Render the Chart.js graph using live data
+                buildChart(currentTemp, feelsLike, humidity);
 
             } catch (error) {
-                console.error("Gagal tarik data:", error);
+                document.getElementById('location').innerText = "Failed to Load Data";
+                console.error("Error fetching data:", error);
             }
         }
 
-        function binaGraf(suhu, rasa, lembap) {
-            const ctx = document.getElementById('grafCuaca').getContext('2d');
+        function buildChart(temp, feels, humid) {
+            const ctx = document.getElementById('weatherChart').getContext('2d');
             new Chart(ctx, {
-                type: 'bar', // Kita guna Bar Chart (Graf Bar)
+                type: 'bar',
                 data: {
-                    labels: ['Suhu Sebenar (°C)', 'Rasa Seperti (°C)', 'Kelembapan (%)'],
+                    labels: ['Actual Temp (°C)', 'Feels Like (°C)', 'Humidity (%)'],
                     datasets: [{
-                        label: 'Status Cuaca Terkini',
-                        data: [suhu, rasa, lembap],
+                        label: 'Current Status',
+                        data: [temp, feels, humid],
                         backgroundColor: ['#00b4d8', '#ffb703', '#2a9d8f'],
                         borderRadius: 8
                     }]
@@ -98,8 +91,8 @@
             });
         }
 
-        // Jalankan fungsi
-        dapatkanDataCuaca();
+        // Initialize fetch on page load
+        fetchWeatherData();
     </script>
 </body>
 </html>
