@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Cuaca Saya</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 80%;
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Dashboard Ramalan Suhu Mingguan (Kuala Lumpur)</h1>
+        <canvas id="weatherChart"></canvas>
+    </div>
+
+    <script>
+        // 1. API URL (Contoh ni ambil data cuaca Kuala Lumpur dari Open-Meteo)
+        const apiUrl = 'https://api.open-meteo.com/v1/forecast?latitude=3.1412&longitude=101.6865&daily=temperature_2m_max&timezone=Asia%2FSingapore';
+
+        // 2. Fungsi untuk hantar request ke API (Fetch Data)
+        async function fetchWeatherData() {
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                // Ambil data tarikh dan suhu dari response API
+                const labels = data.daily.time; // Contoh: ["2026-06-25", "2026-06-26", ...]
+                const temperatures = data.daily.temperature_2m_max; // Contoh: [32.5, 33.1, ...]
+
+                // 3. Render Chart guna data yang dapat tadi
+                renderChart(labels, temperatures);
+            } catch (error) {
+                console.error('Error ambik data API:', error);
+            }
+        }
+
+        // 4. Fungsi untuk bina Chart.js
+        function renderChart(dates, temps) {
+            const ctx = document.getElementById('weatherChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'line', // Jenis chart: line, bar, pie, dll.
+                data: {
+                    labels: dates, // Pakai tarikh dari API
+                    datasets: [{
+                        label: 'Suhu Maksimum (°C)',
+                        data: temps, // Pakai data suhu dari API
+                        borderColor: '#ff6384',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Jalankan fungsi fetch bila page di-load
+        fetchWeatherData();
+    </script>
+</body>
+</html>
