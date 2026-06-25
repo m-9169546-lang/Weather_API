@@ -3,261 +3,373 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Weather Analytics Dashboard</title>
+    <title>Enterprise Weather Analytics Station</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         :root {
-            --bg-body: #0b0e14;
-            --bg-card: #141a24;
-            --border-card: #1f293d;
-            --text-primary: #ffffff;
-            --text-secondary: #6c7d93;
-            --neon-cyan: #00b4d8;
-            --neon-yellow: #ffb703;
-            --neon-green: #2a9d8f;
+            --bg-body: #080b11;
+            --bg-card: #111622;
+            --border-glow: #1d263b;
+            --text-main: #ffffff;
+            --text-muted: #64748b;
+            --neon-blue: #00b4d8;
+            --neon-orange: #ff9f1c;
+            --neon-teal: #2ccce4;
+            --neon-green: #06d6a0;
         }
 
         body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background-color: var(--bg-body);
-            color: var(--text-primary);
-            padding: 30px 20px;
+            color: var(--text-main);
+            padding: 30px;
             margin: 0;
             display: flex;
             justify-content: center;
         }
 
-        .dashboard-container {
+        .dashboard-grid {
             width: 100%;
-            max-width: 1100px;
+            max-width: 1200px;
             display: grid;
-            grid-template-columns: 2.5fr 1fr;
+            grid-template-columns: repeat(4, 1fr);
             grid-gap: 20px;
         }
 
-        .header {
+        /* Top Nav Header */
+        .dashboard-header {
             grid-column: 1 / -1;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border-card);
-            padding-bottom: 15px;
-            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-glow);
         }
 
-        .header h1 {
-            font-size: 26px;
+        .dashboard-header h1 {
+            font-size: 24px;
             margin: 0;
-            color: var(--text-primary);
             font-weight: 600;
+            letter-spacing: -0.5px;
         }
 
-        .header .live-badge {
-            background-color: rgba(42, 157, 143, 0.15);
+        .live-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(6, 214, 160, 0.1);
             color: var(--neon-green);
             padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            border: 1px solid rgba(42, 157, 143, 0.3);
-        }
-
-        /* Card System */
-        .card {
-            background-color: var(--bg-card);
-            border-radius: 12px;
-            border: 1px solid var(--border-card);
-            padding: 20px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-        }
-
-        .card-title {
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-secondary);
-            margin: 0 0 15px 0;
-            font-weight: 600;
-        }
-
-        /* Top Metrics Row */
-        .main-stats-card {
-            grid-column: 1 / -1;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-gap: 20px;
-        }
-
-        .metric-group .label {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .metric-group .value {
-            font-size: 32px;
+            border-radius: 30px;
+            font-size: 11px;
             font-weight: 700;
-            margin-top: 5px;
+            border: 1px solid rgba(6, 214, 160, 0.2);
         }
 
-        #main-temp-val { color: var(--neon-cyan); }
-        #feels-like-val { color: var(--neon-yellow); }
-        #humidity-val { color: var(--neon-green); }
-
-        /* Chart Workspace */
-        .chart-card {
-            grid-column: 1 / 2;
-            height: 380px;
+        /* Standardized Premium Card */
+        .panel {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+            transition: transform 0.2s ease;
         }
 
-        .chart-container {
+        .panel:hover {
+            border-color: #2b3752;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .panel-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.8px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* Row 1: High-Performance Metric Summaries */
+        .metric-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin: 10px 0 5px 0;
+            letter-spacing: -1px;
+        }
+
+        .metric-card.temp .metric-value { color: var(--neon-blue); }
+        .metric-card.feels .metric-value { color: var(--neon-orange); }
+        .metric-card.wind .metric-value { color: var(--text-main); }
+        .metric-card.rain .metric-value { color: var(--neon-teal); }
+
+        .metric-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Row 2: Deep Core Analytical Charts Component */
+        .workspace-area {
+            grid-column: 1 / 4;
+            height: 400px;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            background: #171e2e;
+            border: 1px solid var(--border-glow);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .tab-btn.active {
+            background: var(--neon-blue);
+            color: #000;
+            border-color: var(--neon-blue);
+            font-weight: 700;
+        }
+
+        .chart-frame {
             position: relative;
             width: 100%;
             height: 320px;
+            margin-top: 15px;
         }
 
-        /* Sidebar Side-Widgets */
-        .sidebar {
-            grid-column: 2 / 3;
+        /* Sidebar Ring Analytics Panel */
+        .sidebar-panel {
+            grid-column: 4 / 5;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            justify-content: space-between;
         }
 
-        .widget {
+        .ring-row {
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+
+        /* Micro CSS Progress Ring Matrix */
+        .progress-ring {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: conic-gradient(var(--neon-teal) var(--p, 0%), #1a2333 0);
+            display: flex;
+            align-items: center;
             justify-content: center;
+            position: relative;
         }
 
-        .widget .big-num {
-            font-size: 28px;
-            font-weight: 600;
-            margin: 5px 0 0 0;
+        .progress-ring::before {
+            content: '';
+            position: absolute;
+            width: 46px;
+            height: 46px;
+            background-color: var(--bg-card);
+            border-radius: 50%;
+        }
+
+        .progress-ring span {
+            position: relative;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-main);
         }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-container">
+    <div class="dashboard-grid">
         
-        <div class="header">
-            <h1 id="loc-title">Kuala Lumpur Analytics</h1>
-            <div class="live-badge">● LIVE DATA</div>
+        <div class="dashboard-header">
+            <h1 id="station-heading">KUALA LUMPUR WEATHER MATRIX</h1>
+            <div class="live-status"><div></div> ENGINE OPERATIONAL</div>
         </div>
 
-        <div class="card main-stats-card">
-            <div class="metric-group">
-                <div class="label">Current Temperature</div>
-                <div class="value" id="main-temp-val">--°C</div>
+        <div class="panel metric-card temp">
+            <div class="panel-title">Air Temperature</div>
+            <div class="metric-value" id="val-temp">--°C</div>
+            <div class="metric-sub">Base atmospheric reading</div>
+        </div>
+
+        <div class="panel metric-card feels">
+            <div class="panel-title">Thermal Index</div>
+            <div class="metric-value" id="val-feels">--°C</div>
+            <div class="metric-sub">Perceived biometric temperature</div>
+        </div>
+
+        <div class="panel metric-card wind">
+            <div class="panel-title">Wind Vector</div>
+            <div class="metric-value" id="val-wind">-- km/h</div>
+            <div class="metric-sub">Horizontal velocity displacement</div>
+        </div>
+
+        <div class="panel metric-card rain">
+            <div class="panel-title">Precipitation</div>
+            <div class="metric-value" id="val-rain">-- mm</div>
+            <div class="metric-sub">Liquid moisture accumulation</div>
+        </div>
+
+        <div class="panel workspace-area">
+            <div class="panel-header">
+                <div class="panel-title">Atmospheric Timelines (12-Hour Range)</div>
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchView('line')">LINE CHART</button>
+                    <button class="tab-btn" onclick="switchView('bar')">BAR MATRIX</button>
+                </div>
             </div>
-            <div class="metric-group">
-                <div class="label">Apparent Feels Like</div>
-                <div class="value" id="feels-like-val">--°C</div>
-            </div>
-            <div class="metric-group">
-                <div class="label">Relative Humidity</div>
-                <div class="value" id="humidity-val">--%</div>
+            <div class="chart-frame">
+                <canvas id="coreEngineChart"></canvas>
             </div>
         </div>
 
-        <div class="card chart-card">
-            <div class="card-title">Temperature Evolution (Next 12 Hours)</div>
-            <div class="chart-container">
-                <canvas id="analyticsChart"></canvas>
-            </div>
-        </div>
+        <div class="panel sidebar-panel">
+            <div>
+                <div class="panel-title" style="margin-bottom: 25px;">Density Coefficients</div>
+                
+                <div class="ring-row">
+                    <div>
+                        <div style="font-size: 13px; font-weight:600;">Relative Humidity</div>
+                        <div style="font-size: 11px; color:var(--text-muted);">Water vapor index</div>
+                    </div>
+                    <div class="progress-ring" id="ring-humidity" style="--p: 0%">
+                        <span id="txt-humidity">0%</span>
+                    </div>
+                </div>
 
-        <div class="sidebar">
-            <div class="card widget">
-                <div class="card-title">Wind Velocity</div>
-                <div class="big-num" id="wind-val">-- km/h</div>
+                <div class="ring-row" style="margin-top: 30px;">
+                    <div>
+                        <div style="font-size: 13px; font-weight:600;">Cloud Cover</div>
+                        <div style="font-size: 11px; color:var(--text-muted);">Albedo cloud shading</div>
+                    </div>
+                    <div class="progress-ring" id="ring-cloud" style="--p: 0%; background: conic-gradient(var(--neon-orange) var(--p, 0%), #1a2333 0);">
+                        <span id="txt-cloud">0%</span>
+                    </div>
+                </div>
             </div>
-            <div class="card widget">
-                <div class="card-title">Precipitation</div>
-                <div class="big-num" id="rain-val">-- mm</div>
+            <div style="font-size: 10px; color: var(--text-muted); border-top: 1px solid var(--border-glow); padding-top:10px;">
+                Platform Interface Layer: v3.4.0-Production
             </div>
         </div>
 
     </div>
 
     <script>
-        // Secure, HTTPS Open-Meteo endpoint returning matching parameters
-        const endpoint = 'https://api.open-meteo.com/v1/forecast?latitude=3.1412&longitude=101.6865&hourly=temperature_2m&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation&timezone=Asia%2FSingapore';
+        const apiPath = 'https://api.open-meteo.com/v1/forecast?latitude=3.1412&longitude=101.6865&hourly=temperature_2m,relative_humidity_2m&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,precipitation,cloud_cover&timezone=Asia%2FSingapore';
+        
+        let chartInstance = null;
+        let cachedXLabels = [];
+        let cachedYData = [];
+        let currentChartType = 'line';
 
-        async function initDashboard() {
+        async function processTelemetry() {
             try {
-                const res = await fetch(endpoint);
-                const apiData = await res.json();
+                const response = await fetch(apiPath);
+                const data = await response.json();
 
-                // Bind current values instantly to UI blocks
-                const live = apiData.current;
-                document.getElementById('main-temp-val').innerText = `${live.temperature_2m}°C`;
-                document.getElementById('feels-like-val').innerText = `${live.apparent_temperature}°C`;
-                document.getElementById('humidity-val').innerText = `${live.relative_humidity_2m}%`;
-                document.getElementById('wind-val').innerText = `${live.wind_speed_10m} km/h`;
-                document.getElementById('rain-val').innerText = `${live.precipitation} mm`;
+                const live = data.current;
+                document.getElementById('val-temp').innerText = `${live.temperature_2m}°C`;
+                document.getElementById('val-feels').innerText = `${live.apparent_temperature}°C`;
+                document.getElementById('val-wind').innerText = `${live.wind_speed_10m} km/h`;
+                document.getElementById('val-rain').innerText = `${live.precipitation} mm`;
 
-                // Build timelines dynamically for Chart.js area plot
-                const timeline = apiData.hourly.time.slice(0, 12).map(t => {
+                // Update Mini Progress Gauges
+                document.getElementById('ring-humidity').style.setProperty('--p', `${live.relative_humidity_2m}%`);
+                document.getElementById('txt-humidity').innerText = `${live.relative_humidity_2m}%`;
+                
+                document.getElementById('ring-cloud').style.setProperty('--p', `${live.cloud_cover}%`);
+                document.getElementById('txt-cloud').innerText = `${live.cloud_cover}%`;
+
+                // Cache Time Series
+                cachedXLabels = data.hourly.time.slice(0, 12).map(t => {
                     return new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 });
-                const tempCurve = apiData.hourly.temperature_2m.slice(0, 12);
+                cachedYData = data.hourly.temperature_2m.slice(0, 12);
 
-                generateAreaChart(timeline, tempCurve);
+                renderChart(currentChartType);
 
             } catch (err) {
-                console.error("Dashboard engine connection error:", err);
-                document.getElementById('loc-title').innerText = "Terminal Offline";
+                console.error("Telemetry hardware mapping fault:", err);
+                document.getElementById('station-heading').innerText = "SYSTEM BUS DISCONNECTED";
             }
         }
 
-        function generateAreaChart(xLabels, yData) {
-            const ctx = document.getElementById('analyticsChart').getContext('2d');
+        function renderChart(type) {
+            const ctx = document.getElementById('coreEngineChart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
 
-            // Generate neon chart gradients matching the crypto view layout
-            const neonGlow = ctx.createLinearGradient(0, 0, 0, 300);
-            neonGlow.addColorStop(0, 'rgba(0, 180, 216, 0.4)');
-            neonGlow.addColorStop(1, 'rgba(0, 180, 216, 0.0)');
+            const areaFill = ctx.createLinearGradient(0, 0, 0, 300);
+            areaFill.addColorStop(0, type === 'line' ? 'rgba(0, 180, 216, 0.35)' : 'rgba(44, 204, 228, 0.4)');
+            areaFill.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
-            new Chart(ctx, {
-                type: 'line', // Shifted away from simple columns to sleek area line plots
+            chartInstance = new Chart(ctx, {
+                type: type,
                 data: {
-                    labels: xLabels,
+                    labels: cachedXLabels,
                     datasets: [{
-                        label: 'Temperature Trend',
-                        data: yData,
+                        label: 'Internal Core Temp',
+                        data: cachedYData,
                         borderColor: '#00b4d8',
-                        borderWidth: 3,
-                        backgroundColor: neonGlow,
-                        fill: true, // Turns line chart into a filled area graph
-                        tension: 0.4, // Creates smooth, aesthetic curved paths
-                        pointRadius: 4,
-                        pointBackgroundColor: '#00b4d8',
-                        pointHoverRadius: 7,
-                        pointHoverBackgroundColor: '#ffb703'
+                        borderWidth: 2.5,
+                        backgroundColor: areaFill,
+                        fill: true,
+                        tension: 0.35,
+                        borderRadius: type === 'bar' ? 6 : 0
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
                         y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: '#6c7d93', font: { size: 11 } }
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                            ticks: { color: '#64748b', font: { size: 11 } }
                         },
                         x: {
                             grid: { display: false },
-                            ticks: { color: '#6c7d93', font: { size: 10 } }
+                            ticks: { color: '#64748b', font: { size: 10 } }
                         }
                     }
                 }
             });
         }
 
-        initDashboard();
+        function switchView(mode) {
+            currentChartType = mode;
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            renderChart(mode);
+        }
+
+        processTelemetry();
     </script>
 </body>
 </html>
