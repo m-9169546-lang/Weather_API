@@ -92,8 +92,8 @@
         }
 
         /* Dynamic Grid Sizes based on importance */
-        .large-card { grid-column: 1 / 3; height: 380px; } /* Fits big time-series */
-        .small-card { grid-column: 3 / 4; height: 380px; } /* Fits distributions */
+        .large-card { grid-column: 1 / 3; height: 380px; } 
+        .small-card { grid-column: 3 / 4; height: 380px; } 
         .medium-card { grid-column: span 1; height: 340px; }
 
         .chart-frame {
@@ -109,7 +109,7 @@
         
         <div class="dashboard-header">
             <h1>KUALA LUMPUR WEATHER METRIC STATION</h1>
-            <div class="live-status">● CORE TELEMETRY ONLINE</div>
+            <div class="live-status" id="engine-status">● CORE TELEMETRY ONLINE</div>
         </div>
 
         <div class="card large-card">
@@ -152,44 +152,67 @@
     <script>
         const endpoint = 'https://api.open-meteo.com/v1/forecast?latitude=3.1412&longitude=101.6865&hourly=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,cloud_cover&timezone=Asia%2FSingapore';
 
+        // Keep global references to chart objects to avoid chart re-creation conflicts on automatic fresh cycles
+        let activeCharts = {};
+
         async function triggerDashboardEngine() {
             try {
+                // Flash status text to visibly indicate an automated update loop task just ran
+                document.getElementById('engine-status').innerText = "🔄 SYNCING LIVE TELEMETRY...";
+                document.getElementById('engine-status').style.color = "var(--neon-yellow)";
+
                 const res = await fetch(endpoint);
                 const data = await res.json();
 
-                // 1. Process Timelines for Hourly X-Axis (Next 12 Hours)
+                // FIX FOR SIR: Combine BOTH Date and Time explicitly onto the X-Axis label arrays
                 const hourlyTimeline = data.hourly.time.slice(0, 12).map(t => {
-                    return new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const dateObj = new Date(t);
+                    const day = dateObj.toLocaleDateString([], { day: 'numeric', month: 'short' });
+                    const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                    return `${day}, ${time}`; // Output format: "29 Jun, 12:00"
                 });
 
-                // 2. Map Array Data Streams
+                // Map Array Data Streams
                 const tempDataStream = data.hourly.temperature_2m.slice(0, 12);
                 const rainDataStream = data.hourly.precipitation.slice(0, 12);
                 const windDataStream = data.hourly.wind_speed_10m.slice(0, 12);
 
-                // 3. Current Live Point Objects
+                // Current Live Point Objects
                 const live = data.current;
 
-                // --- EXECUTE CHART RENDERERS ---
+                // --- EXECUTE OR UPDATE SYSTEM CHARTS ---
                 initAreaChart(hourlyTimeline, tempDataStream);
                 initDoughnutChart(live.relative_humidity_2m);
                 initBarChart(hourlyTimeline, rainDataStream);
                 initPolarChart(live.temperature_2m, live.relative_humidity_2m, live.cloud_cover, live.wind_speed_10m, live.precipitation);
                 initLineChart(hourlyTimeline, windDataStream);
 
+                // Revert status back to active online mode
+                document.getElementById('engine-status').innerText = "● CORE TELEMETRY ONLINE";
+                document.getElementById('engine-status').style.color = "var(--neon-green)";
+
             } catch (error) {
                 console.error("Critical Fault in Dashboard Engine Core:", error);
+                document.getElementById('engine-status').innerText = "● ENGINE OFFLINE (FAULT)";
+                document.getElementById('engine-status').style.color = "red";
             }
         }
 
-        // --- CHART #1: AREA CHART (Suhu 12 Jam) ---
+        // Safe helper wrapper function to destroy previous instances clean on background refreshes
+        function safeDestroy(chartKey) {
+            if (activeCharts[chartKey]) {
+                activeCharts[chartKey].destroy();
+            }
+        }
+
         function initAreaChart(labels, values) {
             const ctx = document.getElementById('areaChartCanvas').getContext('2d');
             const glow = ctx.createLinearGradient(0, 0, 0, 300);
             glow.addColorStop(0, 'rgba(0, 180, 216, 0.4)');
             glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
-            new Chart(ctx, {
+            safeDestroy('area');
+            activeCharts['area'] = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -203,14 +226,14 @@
                         pointRadius: 2
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6272a4' } }, x: { grid: { display: false }, ticks: { color: '#6272a4' } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6272a4' } }, x: { grid: { display: false }, ticks: { color: '#6272a4', font: { size: 9 } } } } }
             });
         }
 
-        // --- CHART #2: DOUGHNUT CHART (Kelembapan Udara Semasa) ---
         function initDoughnutChart(humidityValue) {
             const ctx = document.getElementById('doughnutChartCanvas').getContext('2d');
-            new Chart(ctx, {
+            safeDestroy('doughnut');
+            activeCharts['doughnut'] = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Moisture (Humidity)', 'Dry Air'],
@@ -225,10 +248,10 @@
             });
         }
 
-        // --- CHART #3: BAR CHART (Hujan 12 Jam) ---
         function initBarChart(labels, values) {
             const ctx = document.getElementById('barChartCanvas').getContext('2d');
-            new Chart(ctx, {
+            safeDestroy('bar');
+            activeCharts['bar'] = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
@@ -238,19 +261,19 @@
                         borderRadius: 4
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6272a4' } }, x: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6272a4' } }, x: { ticks: { color: '#6272a4', font: { size: 8 } } } } }
             });
         }
 
-        // --- CHART #4: POLAR AREA CHART (Indeks Elemen Cuaca Semasa) ---
         function initPolarChart(temp, humidity, cloud, wind, rain) {
             const ctx = document.getElementById('polarChartCanvas').getContext('2d');
-            new Chart(ctx, {
+            safeDestroy('polar');
+            activeCharts['polar'] = new Chart(ctx, {
                 type: 'polarArea',
                 data: {
                     labels: ['Temp', 'Humidity', 'Clouds', 'Wind', 'Rain'],
                     datasets: [{
-                        data: [temp, humidity, cloud, wind, rain * 10], // Multiply rain for clear scaling visibility
+                        data: [temp, humidity, cloud, wind, rain * 10], 
                         backgroundColor: ['#50fa7b', '#bd93f9', '#ffb86c', '#ff5555', '#ff79c6'],
                         borderColor: '#0e1326',
                         borderWidth: 2
@@ -260,10 +283,10 @@
             });
         }
 
-        // --- CHART #5: LINE CHART (Kelajuan Angin 12 Jam) ---
         function initLineChart(labels, values) {
             const ctx = document.getElementById('lineChartCanvas').getContext('2d');
-            new Chart(ctx, {
+            safeDestroy('line');
+            activeCharts['line'] = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -275,12 +298,15 @@
                         fill: false
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6272a4' } }, x: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6272a4' } }, x: { ticks: { color: '#6272a4', font: { size: 8 } } } } }
             });
         }
 
-        // Launch Dashboard Processing Engine
+        // RUN ENGINE ON FIRST INITIALIZATION
         triggerDashboardEngine();
+
+        // AUTOMATIC REFRESH LOOP: Re-query live metrics data automatically every 60 seconds (60000ms)
+        setInterval(triggerDashboardEngine, 60000);
     </script>
 </body>
 </html>
