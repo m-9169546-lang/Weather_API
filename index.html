@@ -58,6 +58,13 @@
             -webkit-text-fill-color: transparent;
         }
 
+        .status-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
         .live-status {
             background: rgba(80, 250, 123, 0.1);
             color: var(--neon-green);
@@ -67,6 +74,13 @@
             font-weight: 700;
             border: 1px solid rgba(80, 250, 123, 0.3);
             letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: monospace;
         }
 
         /* Card Master Layout */
@@ -109,7 +123,10 @@
         
         <div class="dashboard-header">
             <h1>KUALA LUMPUR WEATHER METRIC STATION</h1>
-            <div class="live-status" id="engine-status">● CORE TELEMETRY ONLINE</div>
+            <div class="status-container">
+                <div class="live-status" id="engine-status">● CORE TELEMETRY ONLINE</div>
+                <div class="timestamp" id="last-update">Last Sync: Fetching...</div>
+            </div>
         </div>
 
         <div class="card large-card">
@@ -152,57 +169,60 @@
     <script>
         const endpoint = 'https://api.open-meteo.com/v1/forecast?latitude=3.1412&longitude=101.6865&hourly=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,cloud_cover&timezone=Asia%2FSingapore';
 
-        // Keep global references to chart objects to avoid chart re-creation conflicts on automatic fresh cycles
         let activeCharts = {};
 
         async function triggerDashboardEngine() {
             try {
-                // Flash status text to visibly indicate an automated update loop task just ran
-                document.getElementById('engine-status').innerText = "🔄 SYNCING LIVE TELEMETRY...";
-                document.getElementById('engine-status').style.color = "var(--neon-yellow)";
+                // Tunjuk kesan visual hantar data tengah sync
+                const statusBadge = document.getElementById('engine-status');
+                statusBadge.innerText = "🔄 SYNCING LIVE TELEMETRY...";
+                statusBadge.style.color = "var(--neon-yellow)";
+                statusBadge.style.background = "rgba(241, 250, 140, 0.1)";
+                statusBadge.style.borderColor = "rgba(241, 250, 140, 0.3)";
 
                 const res = await fetch(endpoint);
                 const data = await res.json();
 
-                // FIX FOR SIR: Combine BOTH Date and Time explicitly onto the X-Axis label arrays
+                // Format X-axis ikutan komen Sir
                 const hourlyTimeline = data.hourly.time.slice(0, 12).map(t => {
                     const dateObj = new Date(t);
                     const day = dateObj.toLocaleDateString([], { day: 'numeric', month: 'short' });
                     const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                    return `${day}, ${time}`; // Output format: "29 Jun, 12:00"
+                    return `${day}, ${time}`;
                 });
 
-                // Map Array Data Streams
                 const tempDataStream = data.hourly.temperature_2m.slice(0, 12);
                 const rainDataStream = data.hourly.precipitation.slice(0, 12);
                 const windDataStream = data.hourly.wind_speed_10m.slice(0, 12);
-
-                // Current Live Point Objects
                 const live = data.current;
 
-                // --- EXECUTE OR UPDATE SYSTEM CHARTS ---
+                // Render / Update semua charts
                 initAreaChart(hourlyTimeline, tempDataStream);
                 initDoughnutChart(live.relative_humidity_2m);
                 initBarChart(hourlyTimeline, rainDataStream);
                 initPolarChart(live.temperature_2m, live.relative_humidity_2m, live.cloud_cover, live.wind_speed_10m, live.precipitation);
                 initLineChart(hourlyTimeline, windDataStream);
 
-                // Revert status back to active online mode
-                document.getElementById('engine-status').innerText = "● CORE TELEMETRY ONLINE";
-                document.getElementById('engine-status').style.color = "var(--neon-green)";
+                // Update teks masa bila data ditarik masuk secara tepat (Jam:Minit:Saat)
+                const kini = new Date();
+                const masaString = kini.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                document.getElementById('last-update').innerText = `Last Sync: ${masaString} (Auto-updates every 30s)`;
+
+                // Kembalikan ke warna hijau menandakan proses fetch selesai
+                statusBadge.innerText = "● CORE TELEMETRY ONLINE";
+                statusBadge.style.color = "var(--neon-green)";
+                statusBadge.style.background = "rgba(80, 250, 123, 0.1)";
+                statusBadge.style.borderColor = "rgba(80, 250, 123, 0.3)";
 
             } catch (error) {
-                console.error("Critical Fault in Dashboard Engine Core:", error);
+                console.error("Critical Fault:", error);
                 document.getElementById('engine-status').innerText = "● ENGINE OFFLINE (FAULT)";
                 document.getElementById('engine-status').style.color = "red";
             }
         }
 
-        // Safe helper wrapper function to destroy previous instances clean on background refreshes
         function safeDestroy(chartKey) {
-            if (activeCharts[chartKey]) {
-                activeCharts[chartKey].destroy();
-            }
+            if (activeCharts[chartKey]) { activeCharts[chartKey].destroy(); }
         }
 
         function initAreaChart(labels, values) {
@@ -302,11 +322,11 @@
             });
         }
 
-        // RUN ENGINE ON FIRST INITIALIZATION
+        // Jalankan kali pertama sewaktu page diload
         triggerDashboardEngine();
 
-        // AUTOMATIC REFRESH LOOP: Re-query live metrics data automatically every 60 seconds (60000ms)
-        setInterval(triggerDashboardEngine, 60000);
+        // Ditukar ke 30 saat (30000ms) supaya perubahan status "Syncing" tu lebih cepat nampak!
+        setInterval(triggerDashboardEngine, 30000);
     </script>
 </body>
 </html>
